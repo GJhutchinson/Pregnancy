@@ -1,5 +1,5 @@
 %% Script for making masks from 3 or 4D data
-% George Hutchinson 25/05/23
+% George Hutchinson 30/06/23
 
 % This code allows for masking of placental data into two distince ROIs;
 % placental and uterus. Note the placental ROI will also contain the
@@ -25,10 +25,16 @@
 %not experimented much with this code so there are probably more user
 %friendly ways of doing things. 
 
+%##############################CHANGES SINCE LAST VERSION##############################
+%Swapped image axis to match MIPAV
+%Changed slice and volume indices to match MIPAV
+%Move undo button
+%Save and close now saves and closes (doesn't generate NIfTI masks)
+%Added generate mask button which now closes script + generates NIfTI masks
 
 %%%%Version history%%%%
-% 25/05/23 mask_draw_uterine_areav1 
-
+% 25/05/23 Initial version
+% 30/06/23 Updated
 %%%%Dependencies%%%% 
 %partition_placentav03.m
 %snap_pla_to_uter.m
@@ -90,13 +96,15 @@ end
 kill_button = uicontrol(figure(1),'Style','togglebutton','min',0,'max',1,'Value',0,'units','normalized','Position',[0.9 0.0185 0.0812 0.0556],'String','Close and save');
 save_and_continue = uicontrol(figure(1),'Style','togglebutton','min',0,'max',1,'Value',0,'units','normalized','Position',[0.82 0.0185 0.0812 0.0556],'String','Save');
 
+generate_masks = uicontrol(figure(1),'Style','togglebutton','min',0,'max',1,'Value',0,'units','normalized','Position',[0.90 0.0768 0.0812 0.09],'String','Generate Masks');
+
 contrast_button = uicontrol(figure(1),'Style','togglebutton','min',0,'max',1,'Value',0,'units','normalized','Position',[0.635 0.0185 0.034 0.0556],'String','Contrast');
 contrast_figure = figure;
 close(contrast_figure)
 
 toggle_placenta_side = uicontrol(f,'Style','togglebutton','min',0,'max',1,'Value',0,'units','normalized','Position',[0.4029 0.0185 0.07 0.03],'String','Toggle pla');
 
-undo_last_ROI = uicontrol(f,'Style','togglebutton','min',0,'max',1,'Value',0,'units','normalized','Position',[0.472 0.0185 0.07 0.03],'String','Undo');
+undo_last_ROI = uicontrol(f,'Style','togglebutton','min',0,'max',1,'Value',0,'units','normalized','Position',[0.3050 0.0463 0.07 0.03],'String','Undo');
 
 draw_button = uicontrol(f,'Style','togglebutton','min',0,'max',1,'Value',0,'units','normalized','Position',[0.2344 0.0185 0.07 0.03],'String','Add obj');
 % draw_dropdown = uicontrol(f,'Style','popupmenu','units','normalized','Position',[0.3144 0.016 0.07 0.03],'String',{'','','Uterine/placenta'});
@@ -105,7 +113,7 @@ draw_dropdown.Value = 3;
 edit_button = uicontrol(f,'Style','togglebutton','min',0,'max',1,'Value',0,'units','normalized','Position',[0.2344 0.0463 0.07 0.03],'String','Edit obj');
 
 send_across_button = uicontrol(f,'Style','togglebutton','min',0,'max',1,'Value',0,'units','normalized','Position',[0.4029 0.0463 0.07 0.03],'String','send ROI');
-send_across_popup_list = uicontrol(f,'Style','popupmenu','units','normalized','Position',[0.472 0.0463 0.05 0.03],'String',{'To slice:','To volume:'});
+send_across_popup_list = uicontrol(f,'Style','popupmenu','units','normalized','Position',[0.472 0.0463 0.05 0.03],'String',{'Next slice:','Next volume:','Previous slice:','Previous volume:'});
 
 
 % add_mask_button = uicontrol(f,'Style','togglebutton','min',0,'max',1,'Value',0,'units','normalized','Position',[0.68 0.0185 0.0812 0.0556],'String','Add ROI');
@@ -126,7 +134,7 @@ end
 %A load of things that get compared during iterations to see if anything
 %has changed and thus require action between runs. 
 uter_ID_prev = 1;
-kill = 0;
+kill = [0 0];
 check_obj = 1;
 selected_mask = 1;
 prev_slice = 0;
@@ -136,7 +144,7 @@ obj_bool_prev = 0;
 total_obj_prev = 999;
 show_masks = 1;
 show_n_masks = 1;
-while kill == 0
+while kill == [0 0]
     % Initially I tried to make this function free; so only one program is
     % needed to run making things easier. I ended up having to add
     % functions, so it would be better to rewrite this at some point, where
@@ -147,9 +155,9 @@ while kill == 0
     
     %Get values from sliders and set strings
     slice_n = round(get(slice_slider,'Value'));
-    set(slice_display,'string',['Slice = ',num2str(slice_n)]);
+    set(slice_display,'string',['Slice = ',num2str(slice_n-1)]);
     vol_n = round(get(volume_slider,'Value'));
-    set(volume_display,'string',['Volume = ',num2str(vol_n)]);
+    set(volume_display,'string',['Volume = ',num2str(vol_n-1)]);
     
     
     %Check if slice or volume has updated; if it has update the objects in
@@ -163,14 +171,14 @@ while kill == 0
      end
     
     
-    kill = get(kill_button,'value');
+    kill = [get(kill_button,'value')  get(generate_masks,'value')];
     
     %Has draw or edit ROI been pressed
     draw_button_val = get(draw_button,'value');
     edit_button_val = get(edit_button,'value');
     
     %Show the selected slice 
-    im = imagesc(ax,scan_1(:,:,slice_n,vol_n));
+    im = imagesc(ax,scan_1(:,:,slice_n,vol_n)');
     axis ij
     axis([0 256 0 256])
     axis(ax,'square');
@@ -312,6 +320,14 @@ while kill == 0
                 pos_store(1).slice(slice_n).volume(vol_n+1).object = pos_store(1).slice(slice_n).volume(vol_n).object;
                 pla_roi.slice(slice_n).volume(vol_n+1) = pla_roi.slice(slice_n).volume(vol_n);
                 uter_ID.slice(slice_n).volume(vol_n+1) = uter_ID.slice(slice_n).volume(vol_n);
+            elseif send_across_popup_list.Value == 3 %Previous slice
+                pos_store(1).slice(slice_n-1).volume(vol_n).object = pos_store(1).slice(slice_n).volume(vol_n).object;
+                pla_roi.slice(slice_n-1).volume(vol_n) = pla_roi.slice(slice_n).volume(vol_n);
+                uter_ID.slice(slice_n-1).volume(vol_n) = uter_ID.slice(slice_n).volume(vol_n);
+            elseif send_across_popup_list.Value == 4 %Previous volume
+                pos_store(1).slice(slice_n).volume(vol_n-1).object = pos_store(1).slice(slice_n).volume(vol_n).object;
+                pla_roi.slice(slice_n).volume(vol_n-1) = pla_roi.slice(slice_n).volume(vol_n);
+                uter_ID.slice(slice_n).volume(vol_n-1) = uter_ID.slice(slice_n).volume(vol_n);
 
 
             end
@@ -423,39 +439,41 @@ close all
 save([save_dir,'/',file(1:end-4),'_mask_file'],'pos_store','pla_roi','uter_ID')
 delete('scan_1')
 
-%1 is uter mask 2 is placental mask
-for mask_n = 1:2
-    if mask_n == 1
-        disp('Saving uterus mask')
-    elseif mask_n == 2
-        disp('Saving placenta mask')
-    end
-    mask = zeros(size(scan_1));
-    for slice_n = 1:size(scan_1,3)
-        for vol_n = 1:size(scan_1,4);
-            try %Try here as Polygon wont be stored for slices or volumes with nothing in them
-                if mask_n == 1
-                    mask_tmp = pos_store(1).slice(slice_n).volume(vol_n).object.pos{1};
-                    mask(:,:,slice_n,vol_n) = poly2mask(pos_store(mask_n).slice(slice_n).volume(vol_n).object.pos{pla_roi_n}(:,1),pos_store(mask_n).slice(slice_n).volume(vol_n).object.pos{pla_roi_n}(:,2),256,256);
-                elseif mask_n == 2
-                    for pla_roi_n = 2:size(pos_store(1).slice(slice_n).volume(vol_n).object.pos,2)
-                        pla_roi_tmp = pla_roi.slice(slice_n).volume(vol_n).pos{pla_roi_n-1};
+
+if isequal(kill,[0 1]) || isequal(kill,[1 1])
+    %1 is uter mask 2 is placental mask
+    for mask_n = 1:2
+        if mask_n == 1
+            disp('Saving uterus mask')
+        elseif mask_n == 2
+            disp('Saving placenta mask')
+        end
+        mask = zeros(size(scan_1));
+        for slice_n = 1:size(scan_1,3)
+            for vol_n = 1:size(scan_1,4);
+                try %Try here as Polygon wont be stored for slices or volumes with nothing in them
+                    if mask_n == 1
+                        mask_tmp = pos_store(1).slice(slice_n).volume(vol_n).object.pos{1};
+                        mask(:,:,slice_n,vol_n) = poly2mask(pos_store(mask_n).slice(slice_n).volume(vol_n).object.pos{pla_roi_n}(:,1),pos_store(mask_n).slice(slice_n).volume(vol_n).object.pos{pla_roi_n}(:,2),256,256);
+                    elseif mask_n == 2
+                        for pla_roi_n = 2:size(pos_store(1).slice(slice_n).volume(vol_n).object.pos,2)
+                            pla_roi_tmp = pla_roi.slice(slice_n).volume(vol_n).pos{pla_roi_n-1};
+                            
+                            mask(:,:,slice_n,vol_n) = mask(:,:,slice_n,vol_n) +  poly2mask(pla_roi_tmp(:,1),pla_roi_tmp(:,2),256,256);
+                        end
                         
-                        mask(:,:,slice_n,vol_n) = mask(:,:,slice_n,vol_n) +  poly2mask(pla_roi_tmp(:,1),pla_roi_tmp(:,2),256,256);
                     end
-                    
                 end
             end
         end
-    end
-    if mask_n == 1
-        niftiwrite(mask,[save_dir,'/',file(1:end-4),'_uterus'])
-    elseif mask_n == 2
-        mask(mask>1) = 1;
-        niftiwrite(mask,[save_dir,'/',file(1:end-4),'_placenta'])
+        if mask_n == 1
+            niftiwrite(mask,[save_dir,'/',file(1:end-4),'_uterus'])
+        elseif mask_n == 2
+            mask(mask>1) = 1;
+            niftiwrite(mask,[save_dir,'/',file(1:end-4),'_placenta'])
+        end
     end
 end
-
 
 
 
