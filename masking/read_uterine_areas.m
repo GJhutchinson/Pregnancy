@@ -9,18 +9,39 @@
 
 %I don't know if it's possible to get the timings from the .nii, the ones I
 %convert don't have this information so I have to scrape it from the PAR
+
+%If you have split the data into two you need to know where the data was
+%split... We may have to figure out a way to deal with 3/4 way splits even.
+%Can you save information directly to the NIfTI header??
+
+
 clc
 clear
 warning('on')
 
 [file,path] = uigetfile('*.PAR','Select the PAR file');
 t = PAR_vol_timings([path,file]);
+cd R:/
 
+[file,path] = uigetfile('*.nii','Select the .nii file');
+scan_hdr = niftiinfo([path,file]);
 
 [file,path] = uigetfile('*file.mat','Select the mask file');
 load([path,file]);
 
 dyn_check = zeros([1,length(t)]);
+
+%If the file has been split the timings no longer line up with the volumes,
+%to detect this check if the time array and the volumes match. If they
+%don't then we need to realign the time array with the volumes
+if length(t) ~= scan_hdr.ImageSize(4)
+    disp('===Split file detected===')
+    %For data sets split with split_n_data the volumes used are stored in
+    %the description section of the header file. So you can rename the
+    %files but make sure the header stays intact.
+    vol_idx = str2num(scan_hdr.Description(9:end))+1;
+    t = t(vol_idx);
+end
 
 %Do first for Uterus, since all masked slices MUST contain uterus mask
 for dyn = 1:length(t)
@@ -54,53 +75,33 @@ end
 %Check for mismatched masking (i.e. a slice on one dynamic, but not on
 %another)
 uter_log = uter_l>0;
+imagesc(uter_log>0)
+ylabel('Slices')
+xlabel('Volume')
 
-%First dynamic
-uter_log_previous = uter_log(:,1);
-for n = 2:length(t)
-    %Take current dynamic
-    uter_log_new = uter_log(:,n);
-    
-    if sum(uter_log_new ~= uter_log_previous)>0 && sum(uter_log_previous)~=0%Check if the same slices are masked
-        %If not- figure out the volume/slices and print a warning
-        uter_mismatch = num2str(find(uter_log_new ~= uter_log_previous));
-        warning(['Mismatch between masks on volumes: ',num2str(n-1),' and ',num2str(n),' slice(s): '])
-        for slice_n = 1:length(uter_mismatch)
-           disp(['Slice: ',num2str(uter_mismatch(slice_n,:))]) 
-        end
-        clear uter_mismatch
-    end
-    %Store current dynamic and then compare to the next
-    uter_log_previous = uter_log(:,n);
-end
+set(gca,'fontsize',32)
+
+t = t(1:size(uter_log,2)); %Not all time points will be used
+
 
 %Total lengths
 not_covered_l = sum((uter_l - pla_l));
 total_l = sum(uter_l);
 covered_l = sum(pla_l);
 
-not_covered_l(1:75) = 0;
-total_l(1:75) = 0;
-covered_l(1:75) = 0;
 
-%Find first non-zero i.e. first results
-frac_idx = find(total_l>0);
-
-%As a fraction of t(0)
-not_covered_frac = (not_covered_l./not_covered_l(frac_idx(1)));
-covered_frac = (covered_l./covered_l(frac_idx(1)));
-
-%Only take non-zero
-not_covered_frac = not_covered_frac(frac_idx);
-covered_frac = covered_frac(frac_idx);
-
-plot(t(frac_idx)-t(frac_idx(1)),not_covered_frac,'x-','linewidth',4,'markersize',14)
+plot(t,not_covered_l./not_covered_l(1),'linewidth',4)
 hold on
-plot(t(frac_idx)-t(frac_idx(1)),covered_frac,'x-','linewidth',4,'markersize',14)
-legend('not covered','covered')
-ylabel('Fraction of value at t(0)')
-xlabel('Time (s)')
+plot(t,covered_l./covered_l(1),'linewidth',4)
 set(gca,'fontsize',32)
+legend('Not covered','Covered')
+xlabel('Time (s)')
+ylabel('Fraction of t(0) length')
+
+
+
+
+
 
 
 
