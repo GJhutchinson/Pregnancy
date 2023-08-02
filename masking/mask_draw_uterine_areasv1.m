@@ -25,7 +25,12 @@
 %not experimented much with this code so there are probably more user
 %friendly ways of doing things. 
 
-%##############################CHANGES SINCE LAST VERSION##############################
+%##############################CHANGES##############################
+
+%01/08/23
+%Added a cd R:/ to automatically start in R drive
+%Added a write permissions check to ensure you can actually save the data
+%30/06/23
 %Swapped image axis to match MIPAV
 %Changed slice and volume indices to match MIPAV
 %Move undo button
@@ -34,7 +39,8 @@
 
 %%%%Version history%%%%
 % 25/05/23 Initial version
-% 30/06/23 Updated
+% 30/06/23 Updated to v1.1
+% 01/08/23 Updated to v1.2
 %%%%Dependencies%%%% 
 %partition_placentav03.m
 %snap_pla_to_uter.m
@@ -46,6 +52,11 @@ clear
 clf
 close all
 
+
+try cd R:/
+catch
+    warning(['Could not locate the R drive'])
+end
 %Pre defining ROI colours
 C = [0.346666666666667,0.536000000000000,0.690666666666667;0.915294117647059,0.281568627450980,0.287843137254902;0.441568627450980,0.749019607843137,0.432156862745098;1,0.598431372549020,0.200000000000000;0.676862745098039,0.444705882352941,0.711372549019608];
 figure
@@ -68,10 +79,25 @@ elseif cont_mask.Value == 1
 end
 
 %Look only for nifti
+%File to mask
 [file,path] = uigetfile('*.nii','Select the NIfTI to mask');
 scan_1 = niftiread([path,file]);
 
+%Save directory 
 [save_dir] = uigetdir('','Select the directory to save the mask(s) to');
+
+%Check write permissions... This is a bit of a caveman way to do this but I
+%couldn't find a better way
+test_fname = [save_dir,'/test_file_asd4hjiowjas522854.txt']; %Random string to ensure there wont be a file in the directory with that name
+try
+    [fileID,flag] = fopen(test_fname,'w');
+    fprintf(fileID,'TEST')
+    fclose(fileID)
+    delete([save_dir,'/test_file_asd4hjiowjas522854.txt']);
+catch
+    error('You may not have write perimissions in this folder, please try another.')
+end
+
 
 %Main GUI figure
 f = figure(1);
