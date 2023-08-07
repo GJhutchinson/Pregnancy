@@ -10,9 +10,6 @@
 %I don't know if it's possible to get the timings from the .nii, the ones I
 %convert don't have this information so I have to scrape it from the PAR
 
-%If you have split the data into two you need to know where the data was
-%split... We may have to figure out a way to deal with 3/4 way splits even.
-%Can you save information directly to the NIfTI header??
 
 
 clc

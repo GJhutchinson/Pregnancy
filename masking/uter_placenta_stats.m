@@ -62,15 +62,10 @@ for roi_n = 2:size(pos_store(1).slice(slice_n).volume(vol_n).object(1).pos,2)
     %done to know which way round the ROI's are
     
     
-    
-    
-    %Now need to recalculate the placental ROI, including the
-    %uterine mask for the placenta. To do this look at the lengths
-    %of the uterus segments, and assume the shortest is the correct        
+    %Now need to determine the placental ROI, including the
+    %uterine mask for the maternal boundary of the placenta.       
 
-    
 
-    
     if pla_intersect(2)>pla_intersect(1)
         no_wrap_tmp = [pos_store(1).slice(slice_n).volume(vol_n).object(1).pos{roi_n}(1,:);uterus_pos_tmp([pla_intersect(1)+1:pla_intersect(2)],:) ; pos_store(1).slice(slice_n).volume(vol_n).object(1).pos{roi_n}(end,:) ];
         wrap_tmp = [pos_store(1).slice(slice_n).volume(vol_n).object(1).pos{roi_n}(1,:);uterus_pos_tmp([flip(1:pla_intersect(1)),flip(pla_intersect(2)+1:size(uterus_pos_tmp,1))],:);pos_store(1).slice(slice_n).volume(vol_n).object(1).pos{roi_n}(end,:)];
