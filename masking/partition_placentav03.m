@@ -33,14 +33,12 @@ for obj_n = 1:size(pos_store(selected_mask).slice(slice_n).volume(vol_n).object,
                     max_x = ceil(max([uterus_pos_tmp(uterus_roi_n,1) uterus_pos_tmp(uterus_roi_n+1,1)]));
                     min_y = floor(min([uterus_pos_tmp(uterus_roi_n,2) uterus_pos_tmp(uterus_roi_n+1,2)]));
                     max_y = ceil(max([uterus_pos_tmp(uterus_roi_n,2) uterus_pos_tmp(uterus_roi_n+1,2)]));
-                    %So a bit of fun here; the min and max values need to
-                    %be floor/ceil due to rounding issues when converting
-                    %polygons to masks (read matlab documentation if
-                    %unsure)
+                    
                     
                     x_coords =[min_x min_x max_x max_x];
                     y_coords = [min_y max_y max_y min_y];
                     
+                    %Is the placental point between neighbouring points
                     bool_check = inpolygon(pos_tmp(1),pos_tmp(2),x_coords,y_coords);
 
                     if bool_check == 1
@@ -63,23 +61,21 @@ for obj_n = 1:size(pos_store(selected_mask).slice(slice_n).volume(vol_n).object,
             %one. 
             
 
-           if pla_intersect(2)>pla_intersect(1)
-              no_wrap_tmp = [pos_store(selected_mask).slice(slice_n).volume(vol_n).object(obj_n).roi(roi_n).Position(1,:);uterus_pos_tmp([pla_intersect(1)+1:pla_intersect(2)],:) ; pos_store(selected_mask).slice(slice_n).volume(vol_n).object(obj_n).roi(roi_n).Position(end,:) ];
-             wrap_tmp = [pos_store(selected_mask).slice(slice_n).volume(vol_n).object(obj_n).roi(roi_n).Position(1,:);uterus_pos_tmp([flip(1:pla_intersect(1)),flip(pla_intersect(2)+1:size(uterus_pos_tmp,1))],:);pos_store(selected_mask).slice(slice_n).volume(vol_n).object(obj_n).roi(roi_n).Position(end,:)];
-           else
-               no_wrap_tmp = [pos_store(selected_mask).slice(slice_n).volume(vol_n).object(obj_n).roi(roi_n).Position(1,:);uterus_pos_tmp(flip([pla_intersect(2)+1:pla_intersect(1)]),:);pos_store(selected_mask).slice(slice_n).volume(vol_n).object(obj_n).roi(roi_n).Position(end,:)];
-               wrap_tmp = [pos_store(selected_mask).slice(slice_n).volume(vol_n).object(obj_n).roi(roi_n).Position(1,:);flip(uterus_pos_tmp([flip(1:pla_intersect(2)), flip(pla_intersect(1)+1:size(uterus_pos_tmp,1))],:));pos_store(selected_mask).slice(slice_n).volume(vol_n).object(obj_n).roi(roi_n).Position(end,:)];
-           end
+            if pla_intersect(2)>pla_intersect(1)
+                no_wrap_tmp = [pos_store(selected_mask).slice(slice_n).volume(vol_n).object(obj_n).roi(roi_n).Position(1,:);uterus_pos_tmp([pla_intersect(1)+1:pla_intersect(2)],:) ; pos_store(selected_mask).slice(slice_n).volume(vol_n).object(obj_n).roi(roi_n).Position(end,:) ];
+                wrap_tmp = [pos_store(selected_mask).slice(slice_n).volume(vol_n).object(obj_n).roi(roi_n).Position(1,:);uterus_pos_tmp([flip(1:pla_intersect(1)),flip(pla_intersect(2)+1:size(uterus_pos_tmp,1))],:);pos_store(selected_mask).slice(slice_n).volume(vol_n).object(obj_n).roi(roi_n).Position(end,:)];
+            else
+                no_wrap_tmp = [pos_store(selected_mask).slice(slice_n).volume(vol_n).object(obj_n).roi(roi_n).Position(1,:);uterus_pos_tmp(flip([pla_intersect(2)+1:pla_intersect(1)]),:);pos_store(selected_mask).slice(slice_n).volume(vol_n).object(obj_n).roi(roi_n).Position(end,:)];
+                wrap_tmp = [pos_store(selected_mask).slice(slice_n).volume(vol_n).object(obj_n).roi(roi_n).Position(1,:);flip(uterus_pos_tmp([flip(1:pla_intersect(2)), flip(pla_intersect(1)+1:size(uterus_pos_tmp,1))],:));pos_store(selected_mask).slice(slice_n).volume(vol_n).object(obj_n).roi(roi_n).Position(end,:)];
+            end
 
            %Figure out where the placenta mask started from 
            
            
-            d = diff([no_wrap_tmp(:,1) no_wrap_tmp(:,1)]);
-            no_wrap_l{n_pla} = sum(sqrt(sum(d.*d,2)));
-            
-            d = diff([wrap_tmp(:,1) wrap_tmp(:,1)]);
-            wrap_l{n_pla}= sum(sqrt(sum(d.*d,2)));
-            
+            no_wrap_l{n_pla} = sum(sqrt(sum(((no_wrap_tmp(2:end,:)-no_wrap_tmp(1:end-1,:)).^2),2)));
+            wrap_l{n_pla} = sum(sqrt(sum(((wrap_tmp(2:end,:)-wrap_tmp(1:end-1,:)).^2),2)));
+
+           
             no_wrap{n_pla} = no_wrap_tmp;
             wrap{n_pla} = wrap_tmp;
             

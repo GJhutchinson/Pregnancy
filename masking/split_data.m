@@ -26,6 +26,7 @@ split_idx = input('Enter index to split data: ');
 scan_1 = scan(:,:,:,1:split_idx+1);%Split to scan_1
 scan_1_info = whos('scan_1');
 scan_1_hdr = scan_hdr;
+scan_1_hdr.ImageSize = [];
 scan_1_hdr.Description = ['Volumes 1:',num2str(split_idx+1)]
 disp(['Scan 1 ',num2str(size(scan_1,4)),' volumes ',num2str(scan_1_info.bytes*1e-9),' GB'])
 niftiwrite(scan_1,[save_dir,'/',file(1:end-4),'split_1_test'],scan_1_hdr)

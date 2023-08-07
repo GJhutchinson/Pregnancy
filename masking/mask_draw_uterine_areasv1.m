@@ -10,25 +10,24 @@
 % the uterus and the length the placenta covers along the uterus. 
 
 
-%This code is very much a work in progress, expect some bugs and issues
+%This code is very much a work in progress, expect some bugs and problems
 %while teething issues are sorted out. Code has had a significant overhaul 
-% to do placental + uterine ROI masking
-% new SOP and guidelines have been written and are in the teams. This may introduce more bugs
+% to do placental + uterine ROI masking. This may introduce more bugs
 % into the code I'd reccomend saving regularly and if it crashes try
 % higlightling the line below (excluding the % and pressing F9) to try to save any unsaved data.
 
 % save([save_dir,'/',file(1:end-4),'_mask_file_post_crash'],'pos_store','pla_roi','uter_ID')
 
-%It will end with post_crash.mat just in case the crash broke anything to
-%do with the data making it not recoverable. If you have any
-%reccomendations (moving buttons, changing how things work etc) tell me, I've
-%not experimented much with this code so there are probably more user
-%friendly ways of doing things. 
+%The filename will end with post_crash.mat and not overwrite the current mask file in case
+%the data causes issues with the script (This likely would be easily
+%recoverable). If you have any reccomendations (moving buttons, changing 
+%how things work etc) tell me, I've not experimented much with this code so 
+%there are probably more user friendly or intelligent of doing things. 
 
 %##############################CHANGES##############################
 
 %01/08/23
-%Added a cd R:/ to automatically start in R drive
+%Added some cd commands to place you in the right directories for SWIRL
 %Added a write permissions check to ensure you can actually save the data
 %30/06/23
 %Swapped image axis to match MIPAV
@@ -52,11 +51,11 @@ clear
 clf
 close all
 
-
-try cd R:/
-catch
-    warning(['Could not locate the R drive'])
-end
+addpath('/.')
+% try cd R:/
+% catch
+%     warning(['Could not locate the R drive'])
+% end
 %Pre defining ROI colours
 C = [0.346666666666667,0.536000000000000,0.690666666666667;0.915294117647059,0.281568627450980,0.287843137254902;0.441568627450980,0.749019607843137,0.432156862745098;1,0.598431372549020,0.200000000000000;0.676862745098039,0.444705882352941,0.711372549019608];
 figure
@@ -80,9 +79,11 @@ end
 
 %Look only for nifti
 %File to mask
+cd('R:\DRS-SWIRL\Activity 2 MRI')
+
 [file,path] = uigetfile('*.nii','Select the NIfTI to mask');
 scan_1 = niftiread([path,file]);
-
+cd(path)
 %Save directory 
 [save_dir] = uigetdir('','Select the directory to save the mask(s) to');
 
@@ -272,6 +273,7 @@ while kill == [0 0]
                    %Then allow another polygon for the placental ROI
                    roi_n = size(pos_store(selected_mask).slice(slice_n).volume(vol_n).object(obj_n).roi,2)
                    pos_store(selected_mask).slice(slice_n).volume(vol_n).object(obj_n).roi(roi_n+1) = drawpolyline(im.Parent);
+                   %Force placental mask to start and end on the uterus mask
                    [pos_store] = snap_pla_to_uterv01(pos_store,selected_mask,slice_n,vol_n,obj_n);               %Now need to snap the placental ROI to a point which is also
                    pos_store(selected_mask).slice(slice_n).volume(vol_n).object(obj_n).pos{roi_n+1} = pos_store(selected_mask).slice(slice_n).volume(vol_n).object(obj_n).roi(roi_n+1).Position; %Update ROI with new ROI
 
@@ -282,6 +284,7 @@ while kill == [0 0]
                pos_store(selected_mask).slice(slice_n).volume(vol_n).object(obj_n).pos{1} = pos_store(selected_mask).slice(slice_n).volume(vol_n).object(obj_n).roi(1).Position; %Update ROI with new ROI
                
                pos_store(selected_mask).slice(slice_n).volume(vol_n).object(obj_n).roi(2) = drawpolyline(im.Parent);
+               %Force placental mask to start and end on the uterus mask
                [pos_store] = snap_pla_to_uterv01(pos_store,selected_mask,slice_n,vol_n,obj_n);               %Now need to snap the placental ROI to a point which is also
                
                pos_store(selected_mask).slice(slice_n).volume(vol_n).object(obj_n).pos{2} = pos_store(selected_mask).slice(slice_n).volume(vol_n).object(obj_n).roi(2).Position; %Update ROI with new ROI
@@ -295,6 +298,8 @@ while kill == [0 0]
         else
             uter_ID.slice(slice_n).volume(vol_n) = 1;
         end
+        %Now need to split the Uterus into placenta and not placenta + find
+        %the intersect of the placenta with the wall mask
         [pla_roi] = partition_placentav03(pos_store,slice_n,vol_n,selected_mask,uter_ID.slice(slice_n).volume(vol_n),pla_roi);
         draw_button.Value = 0;
     end
