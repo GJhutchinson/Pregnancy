@@ -13,6 +13,7 @@ for obj_n = 1:size(pos_store(selected_mask).slice(slice_n).volume(vol_n).object,
             for pos_n = [1 ,size(pos_store(selected_mask).slice(slice_n).volume(vol_n).object(obj_n).roi(roi_n).Position,1)]
                 pos_tmp = pos_store(selected_mask).slice(slice_n).volume(vol_n).object(obj_n).roi(roi_n).Position(pos_n,:);
                 uterus_pos_tmp = [pos_store(selected_mask).slice(slice_n).volume(vol_n).object(1).roi(1).Position; pos_store(selected_mask).slice(slice_n).volume(vol_n).object(1).roi(1).Position(1,:)];
+
                 for uterus_roi_n = 1:size(uterus_pos_tmp,1)-1
                     %So there's a problem that needs solving here; We have
                     %the Uterus outline and the line that describes the
@@ -44,7 +45,7 @@ for obj_n = 1:size(pos_store(selected_mask).slice(slice_n).volume(vol_n).object,
                     if bool_check == 1
                        pla_intersect(c) = uterus_roi_n;
                        c = c+1;
-                        
+                       break
                     end
                 end
             end

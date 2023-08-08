@@ -51,7 +51,7 @@ clear
 clf
 close all
 
-addpath('/.')
+addpath('.')
 % try cd R:/
 % catch
 %     warning(['Could not locate the R drive'])
