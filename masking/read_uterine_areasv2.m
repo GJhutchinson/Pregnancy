@@ -131,12 +131,11 @@ ylabel('Total length (voxels)')
 xlabel('Time (s)')
 set(gca,'fontsize',32)
 
-pla_stats = [pla_a;zeros([1,size(pla_a,2)])*nan;pla_l;zeros([1,size(pla_a,2)])*nan;t_pla]
-uter_stats = [uter_a;zeros([1,size(uter_a,2)])*nan;uter_l;zeros([1,size(uter_a,2)])*nan;t_uter]
+pla_stats = [pla_a;zeros([1,size(pla_a,2)])*nan;pla_l;zeros([1,size(pla_a,2)])*nan;t_pla];
+uter_stats = [uter_a;zeros([1,size(uter_a,2)])*nan;uter_l;zeros([1,size(uter_a,2)])*nan;t_uter];
 
-xlswrite([path,file(1:end-13),'contractions_pla_stats.xls'],pla_stats)
-xlswrite([path,file(1:end-13),'contractions_uter_stats.xls'],uter_stats)
-
+xlswrite([path,file(1:end-13),'contractions_pla_stats.xls'],pla_stats);
+xlswrite([path,file(1:end-13),'contractions_uter_stats.xls'],uter_stats);
 
 
 
