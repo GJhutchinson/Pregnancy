@@ -20,7 +20,7 @@ addpath('.')
 cd('R:\DRS-SWIRL\Activity 2 MRI')
 [file,path] = uigetfile('*.PAR','Select the PAR file');
 t = PAR_vol_timings([path,file]);
-cd([path,'/../split'])
+cd([path,'/..'])
 
 [file,path] = uigetfile('*.nii','Select the .nii file');
 scan_hdr = niftiinfo([path,file]);
