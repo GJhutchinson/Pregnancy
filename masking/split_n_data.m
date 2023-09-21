@@ -45,8 +45,11 @@ for n = 1:n_splits
     hdr_tmp.Description = ['Volumes ',num2str(start_idx_tmp),':',num2str(end_idx_tmp)];
     disp('File split')
     %Save file
-    niftiwrite(scan_tmp,[save_dir,'/',file(1:end-4),'vol_',num2str(start_idx_tmp),'_to_',num2str(end_idx_tmp)],hdr_tmp)
-    disp('File saved')
+    if strcmp(file(end-6:end),'.nii.gz')
+        niftiwrite(scan_tmp,[save_dir,'\',file(1:end-7),'vol_',num2str(start_idx_tmp),'_to_',num2str(end_idx_tmp)])
+    else
+        niftiwrite(scan_tmp,[save_dir,'\',file(1:end-4),'vol_',num2str(start_idx_tmp),'_to_',num2str(end_idx_tmp)])
+    end
     clear scan_tmp
     disp('............')
 end
