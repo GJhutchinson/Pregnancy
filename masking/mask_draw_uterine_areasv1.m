@@ -81,7 +81,7 @@ end
 %File to mask
 cd('R:\DRS-SWIRL\Activity 2 MRI')
 
-[file,path] = uigetfile('*.nii','Select the NIfTI to mask');
+[file,path] = uigetfile('*.nii*','Select the NIfTI to mask');
 scan_1 = niftiread([path,file]);
 cd(path)
 %Save directory 

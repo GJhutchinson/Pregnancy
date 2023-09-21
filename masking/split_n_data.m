@@ -12,7 +12,7 @@ clear
 %can change the file names. 
 
 
-[file,path] = uigetfile('*.nii','Select the NIfTI to split');
+[file,path] = uigetfile('*.nii*','Select the NIfTI to split');
 scan = niftiread([path,file]);%Load data using GUI
 scan_hdr = niftiinfo([path,file]);%Load header
 [save_dir] = uigetdir('','Select the directory to save the output to');

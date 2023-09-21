@@ -28,7 +28,7 @@ cd('R:\DRS-SWIRL\Activity 2 MRI')
 t = PAR_vol_timings([path,file]);
 cd([path,'/..'])
 
-[file,path] = uigetfile('*.nii','Select the .nii file');
+[file,path] = uigetfile('*.nii*','Select the .nii file');
 scan_hdr = niftiinfo([path,file]);
 
 [file,path] = uigetfile('*file.mat','Select the mask file');
