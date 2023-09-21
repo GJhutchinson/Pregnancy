@@ -53,7 +53,7 @@ for roi_n = 2:size(pos_store(1).slice(slice_n).volume(vol_n).object(1).pos,2)
             if bool_check == 1
                 pla_intersect(c) = uterus_roi_n;
                 c = c+1;
-                
+                break
             end
         end
     end
