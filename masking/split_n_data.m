@@ -46,9 +46,9 @@ for n = 1:n_splits
     disp('File split')
     %Save file
     if strcmp(file(end-6:end),'.nii.gz')
-        niftiwrite(scan_tmp,[save_dir,'\',file(1:end-7),'vol_',num2str(start_idx_tmp),'_to_',num2str(end_idx_tmp)])
+        niftiwrite(scan_tmp,[save_dir,'\',file(1:end-7),'vol_',num2str(start_idx_tmp),'_to_',num2str(end_idx_tmp)],hdr_tmp)
     else
-        niftiwrite(scan_tmp,[save_dir,'\',file(1:end-4),'vol_',num2str(start_idx_tmp),'_to_',num2str(end_idx_tmp)])
+        niftiwrite(scan_tmp,[save_dir,'\',file(1:end-4),'vol_',num2str(start_idx_tmp),'_to_',num2str(end_idx_tmp)],hdr_tmp)
     end
     clear scan_tmp
     disp('............')

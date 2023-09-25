@@ -18,9 +18,17 @@ dyn(1) = 1;
 c = 2;
 while ~isempty(line_ex)~=0 %Until you reach the end
     if dyn(c-1) ~= str2double(line_ex(10:12))%If this is a new dynamic
-        dyn(c) = str2double(line_ex(10:12));%Save dynamic #
-        t(c)=  str2double(line_ex(182:189));%Save time
-        c = c+1;
+        %After the 100th dynamic the time gets shifted by a column to
+        %accomodate the extra digit 
+        if str2double(line_ex(10:12)) < 100
+            dyn(c) = str2double(line_ex(10:12));%Save dynamic #
+            t(c)=  str2double(line_ex(182:189));%Save time
+            c = c+1;
+        else
+            dyn(c) = str2double(line_ex(10:12));%Save dynamic #
+            t(c)=  str2double(line_ex(183:190));%Save time
+            c = c+1;
+        end
     end
   line_ex = fgetl(fileID);%Next line
 end
