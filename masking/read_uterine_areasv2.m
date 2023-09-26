@@ -30,6 +30,7 @@ cd([path,'/..'])
 
 [file,path] = uigetfile('*.nii*','Select the .nii file');
 scan_hdr = niftiinfo([path,file]);
+img = niftiread([path,file]);
 
 [file,path] = uigetfile('*file.mat','Select the mask file');
 load([path,file]);
@@ -55,6 +56,7 @@ end
 %pos_store and uter_ID arrays to recreate the masks and calculate the
 %lengths. Note this error does not affect the masks, they are still
 %correct, just the calculations made using them were incorrect. 
+
 for vol_n = 1:length(t)
     for slice_n = 1:size(pos_store.slice,2)
         try
@@ -63,10 +65,20 @@ for vol_n = 1:length(t)
             pla_l(slice_n,vol_n) = pla_out.length;
             uter_a(slice_n,vol_n) = uter_out.area;
             uter_l(slice_n,vol_n) = uter_out.length;
+            
+            %Calculate the intensity of the placenta
+            pla_mask_tmp = poly2mask(pla_out.outline{1}(:,2),pla_out.outline{1}(:,1),size(img,1),size(img,2));
+            if pla_out.area>1
+                pla_int(slice_n,vol_n) = nanmean(nonzeros(img(:,:,slice_n,vol_n).*pla_mask_tmp));
+            end
         end
     end
 end
 
+%Set NaNs to zero; if there are no voxels that are not NaNs or zero, then 
+%nanmean(nonzeros()) will return a NaN, but these should be zero i.e. no
+%voxels present
+pla_int(isnan(pla_int)) = 0;
 
 
 figure
@@ -134,8 +146,19 @@ set(gca,'fontsize',32)
 pla_stats = [pla_a;zeros([1,size(pla_a,2)])*nan;pla_l;zeros([1,size(pla_a,2)])*nan;t_pla];
 uter_stats = [uter_a;zeros([1,size(uter_a,2)])*nan;uter_l;zeros([1,size(uter_a,2)])*nan;t_uter];
 
+
+%Write out data
 xlswrite([path,file(1:end-13),'contractions_pla_stats.xls'],pla_stats);
 xlswrite([path,file(1:end-13),'contractions_uter_stats.xls'],uter_stats);
+
+save([path,file(1:end-13),'contractions_data'],'pla_a','pla_l','uter_a','uter_l','pla_int');
+writematrix(transpose(t),[path,file(1:end-13),'time_table.txt']);
+writematrix(transpose(pla_a),[path,file(1:end-13),'pla_a_table.txt']);
+writematrix(transpose(pla_l),[path,file(1:end-13),'pla_l_table.txt']);
+writematrix(transpose(uter_a),[path,file(1:end-13),'uter_a_table.txt']);
+writematrix(transpose(uter_l),[path,file(1:end-13),'uter_l_table.txt']);
+writematrix(transpose(pla_int),[path,file(1:end-13),'pla_int_table.txt']);
+
 
 
 
