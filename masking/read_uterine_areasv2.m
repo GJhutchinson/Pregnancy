@@ -30,7 +30,7 @@ cd([path,'/..'])
 
 [file,path] = uigetfile('*.nii*','Select the .nii file');
 scan_hdr = niftiinfo([path,file]);
-img = niftiread([path,file]);
+img = double(niftiread([path,file]));
 
 [file,path] = uigetfile('*file.mat','Select the mask file');
 load([path,file]);
@@ -75,7 +75,7 @@ for vol_n = 1:length(t)
     end
 end
 
-%Set NaNs to zero; if there are no voxels that are not NaNs or zero, then 
+%Set NaNs to zero; if there are no voxels within a slice that are not NaNs or zero, then 
 %nanmean(nonzeros()) will return a NaN, but these should be zero i.e. no
 %voxels present
 pla_int(isnan(pla_int)) = 0;
