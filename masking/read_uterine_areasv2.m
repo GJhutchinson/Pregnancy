@@ -61,8 +61,8 @@ for vol_n = 1:length(t)
     for slice_n = 1:size(pos_store.slice,2)
         try
             [pla_out,uter_out] = uter_placenta_stats(pos_store,uter_ID.slice(slice_n).volume(vol_n),slice_n,vol_n);
-            pla_a(slice_n,vol_n) = pla_out.area;
-            pla_l(slice_n,vol_n) = pla_out.length;
+            pla_a(slice_n,vol_n) = sum(pla_out.area);
+            pla_l(slice_n,vol_n) = sum(pla_out.length);
             uter_a(slice_n,vol_n) = uter_out.area;
             uter_l(slice_n,vol_n) = uter_out.length;
             
