@@ -205,7 +205,7 @@ while kill == [0 0]
     edit_button_val = get(edit_button,'value');
     
     %Show the selected slice 
-    im = imagesc(ax,scan_1(:,:,slice_n,vol_n)');
+    im = imagesc(ax,flip(scan_1(:,:,slice_n,vol_n)'));
     axis ij
     axis([0 256 0 256])
     axis(ax,'square');
@@ -485,24 +485,35 @@ if isequal(kill,[0 1]) || isequal(kill,[1 1])
                 try %Try here as Polygon wont be stored for slices or volumes with nothing in them
                     if mask_n == 1
                         mask_tmp = pos_store(1).slice(slice_n).volume(vol_n).object.pos{1};
-                        mask(:,:,slice_n,vol_n) = poly2mask(pos_store(mask_n).slice(slice_n).volume(vol_n).object.pos{pla_roi_n}(:,1),pos_store(mask_n).slice(slice_n).volume(vol_n).object.pos{pla_roi_n}(:,2),256,256);
+                        mask(:,:,slice_n,vol_n) = poly2mask(pos_store(mask_n).slice(slice_n).volume(vol_n).object.pos{pla_roi_n}(:,1),pos_store(mask_n).slice(slice_n).volume(vol_n).object.pos{pla_roi_n}(:,2),256,256)';
                     elseif mask_n == 2
                         for pla_roi_n = 2:size(pos_store(1).slice(slice_n).volume(vol_n).object.pos,2)
                             pla_roi_tmp = pla_roi.slice(slice_n).volume(vol_n).pos{pla_roi_n-1};
                             
-                            mask(:,:,slice_n,vol_n) = mask(:,:,slice_n,vol_n) +  poly2mask(pla_roi_tmp(:,1),pla_roi_tmp(:,2),256,256);
+                            mask(:,:,slice_n,vol_n) = mask(:,:,slice_n,vol_n) +  poly2mask(pla_roi_tmp(:,1),pla_roi_tmp(:,2),256,256)';
                         end
                         
                     end
                 end
             end
         end
+
+        mask(mask>1) = 1;
+
+        if contains(file(1:end-4),'DWI')||contains(file(1:end-4),'PGSE') %For DWI copy across all b-values
+            for vol_n = 2:size(mask,4)
+                mask(:,:,:,vol_n) = mask(:,:,:,1);
+            end
+        end
+
+
         if mask_n == 1
             niftiwrite(mask,[save_dir,'/',file(1:end-4),'_uterus'])
         elseif mask_n == 2
-            mask(mask>1) = 1;
             niftiwrite(mask,[save_dir,'/',file(1:end-4),'_placenta'])
         end
+
+    
     end
 end
 

@@ -1,4 +1,4 @@
-function [pla_out,uter_out] = uter_placenta_stats(pos_store,uter_ID,slice_n,vol_n)
+function [pla_out,uter_out] = uter_placenta_stats(pos_store,uter_ID_c,slice_n,vol_n)
 %This function takes the pos_store and uter_ID arrays to recreate the
 %placenta/uterus outlines made in the mask drawing program. Due to an error
 %in parition_placentav03.m the results calculated by the mask drawing
@@ -99,7 +99,7 @@ for roi_n = 2:size(pos_store(1).slice(slice_n).volume(vol_n).object(1).pos,2)
     % and so on
     
     
-    if  n_pla+1 ~= uter_ID
+    if  n_pla+1 ~= uter_ID_c
         if no_wrap_l(n_pla)<wrap_l(n_pla)
             if pla_intersect(2)>pla_intersect(1)
                 pla_out.outline{roi_n-1} = [no_wrap_tmp(1:end,:);flip((pos_store(1).slice(slice_n).volume(vol_n).object(1).pos{roi_n}))];
@@ -108,6 +108,7 @@ for roi_n = 2:size(pos_store(1).slice(slice_n).volume(vol_n).object(1).pos,2)
             end
             
             pla_out.length(n_pla)  = no_wrap_l(n_pla);
+            pla_out.bed_outline{n_pla} = no_wrap{n_pla};
         else
             if pla_intersect(2)>pla_intersect(1)
                 pla_out.outline{roi_n-1}  = [wrap_tmp(1:end,:);flip(pos_store(1).slice(slice_n).volume(vol_n).object(1).pos{roi_n})];
@@ -115,8 +116,9 @@ for roi_n = 2:size(pos_store(1).slice(slice_n).volume(vol_n).object(1).pos,2)
                 pla_out.outline{roi_n-1}  = [wrap_tmp(1:end,:);flip(pos_store(1).slice(slice_n).volume(vol_n).object(1).pos{roi_n})];
             end
             pla_out.length(n_pla) = wrap_l(n_pla);
+            pla_out.bed_outline{n_pla} = wrap{n_pla};
         end
-    elseif n_pla+1 == uter_ID
+    elseif n_pla+1 == uter_ID_c
         if no_wrap_l(n_pla)>wrap_l(n_pla)
             if pla_intersect(2)>pla_intersect(1)
                 pla_out.outline{roi_n-1} = [no_wrap_tmp(1:end,:);flip((pos_store(1).slice(slice_n).volume(vol_n).object(1).pos{roi_n}))];
@@ -124,6 +126,7 @@ for roi_n = 2:size(pos_store(1).slice(slice_n).volume(vol_n).object(1).pos,2)
                 pla_out.outline{roi_n-1} = [no_wrap_tmp(1:end,:);flip(pos_store(1).slice(slice_n).volume(vol_n).object(1).pos{roi_n})];
             end
             pla_out.length(n_pla)  = no_wrap_l(n_pla);
+            pla_out.bed_outline{n_pla} = no_wrap{n_pla};
         else
             if pla_intersect(2)>pla_intersect(1)
                 pla_out.outline{roi_n-1} = [wrap_tmp(1:end,:);flip(pos_store(1).slice(slice_n).volume(vol_n).object(1).pos{roi_n})];
@@ -131,6 +134,7 @@ for roi_n = 2:size(pos_store(1).slice(slice_n).volume(vol_n).object(1).pos,2)
                 pla_out.outline{roi_n-1} = [wrap_tmp(1:end,:);flip(pos_store(1).slice(slice_n).volume(vol_n).object(1).pos{roi_n})];
             end
             pla_out.length(n_pla) = wrap_l(n_pla);
+            pla_out.bed_outline{n_pla} = wrap{n_pla};
         end
         
     end

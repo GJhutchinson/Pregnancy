@@ -14,7 +14,11 @@ uter_approx = createMask(uter_tmp);
 %Then create a mask, this is a 1-voxel wide mask around the edge of the
 %uterus. By doing so we can take the x+y coordinated of the exterior of the
 %uterus, and find the closest point to the end of the placental mask, and
-%snap the placental mask to this point. 
+%snap the placental mask to this point. They don't perfectly line up, but
+%it is within 1 voxel, and when converted to a mask will not be noticeable.
+%In theory it would be best to find the nearest point on the line between
+%the points n and n+1 but I imagine that would be very computationally
+%expensive. 
 [ind] = find(uter_approx>0);
 [y,x] = ind2sub(size(uter_approx),ind);
 delete(uter_tmp)
