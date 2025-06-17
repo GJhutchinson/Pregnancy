@@ -6,10 +6,14 @@ clc
 %both?.... probably one at a time. I'm not going to have GUI inputs or the
 %like; just edit below parameters to select the scans you want
 
-SWIRL_ID = '001';
-visit_ID = '1';
+SWIRL_ID = '008';
+visit_ID = '2';
 scan_n = '11';
-discard_n = [2 6 8 12 15];
+discard_n = [6 11];
+
+
+% clearvars -except SWIRL_ID visit_ID scan_n
+% discard_n = [4 9 19];
 
 %Output variable: IVIM_fit
 IVIM_fit.discard_n = discard_n;
@@ -19,9 +23,10 @@ b = [0 1 3 9 18 32 54 88 110 147 180 200 230 270 300 350 400 450 500];
 IVIM_fit.b = b;
 
 img = double(niftiread(['R:\DRS-SWIRL\Activity 2 MRI\SWIRL_B_',SWIRL_ID,'_',visit_ID,'\DWI\SWIRL_B_',SWIRL_ID,'_',visit_ID,'_WIPDWI_19bvalues_',scan_n,'.nii']));
-pla_mask = fliplr(double(niftiread(['R:\DRS-SWIRL\Activity 2 MRI\SWIRL_B_',SWIRL_ID,'_',visit_ID,'\DWI\SWIRL_B_',SWIRL_ID,'_',visit_ID,'_WIPDWI_19bvalues_',scan_n,'_placenta.nii'])));
-wall_mask = fliplr(double(niftiread(['R:\DRS-SWIRL\Activity 2 MRI\SWIRL_B_',SWIRL_ID,'_',visit_ID,'\DWI\SWIRL_B_',SWIRL_ID,'_',visit_ID,'_WIPDWI_19bvalues_',scan_n,'_uterus.nii'])));
-
+pla_mask = double(niftiread(['R:\DRS-SWIRL\Activity 2 MRI\misc\George\DWI\erosion_masks_fitting\masks\SWIRL_B_',SWIRL_ID,'_',visit_ID,'\SWIRL_B_',SWIRL_ID,'_',visit_ID,'_WIPPGSE_placenta_',scan_n,'_pla_mask.nii']));
+wall_mask = double(niftiread(['R:\DRS-SWIRL\Activity 2 MRI\misc\George\DWI\erosion_masks_fitting\masks\SWIRL_B_',SWIRL_ID,'_',visit_ID,'\SWIRL_B_',SWIRL_ID,'_',visit_ID,'_WIPPGSE_placenta_',scan_n,'_wall_mask.nii']));
+chor_mask = double(niftiread(['R:\DRS-SWIRL\Activity 2 MRI\misc\George\DWI\erosion_masks_fitting\masks\SWIRL_B_',SWIRL_ID,'_',visit_ID,'\SWIRL_B_',SWIRL_ID,'_',visit_ID,'_WIPPGSE_placenta_',scan_n,'_chor_mask.nii']));
+bas_mask = double(niftiread(['R:\DRS-SWIRL\Activity 2 MRI\misc\George\DWI\erosion_masks_fitting\masks\SWIRL_B_',SWIRL_ID,'_',visit_ID,'\SWIRL_B_',SWIRL_ID,'_',visit_ID,'_WIPPGSE_placenta_',scan_n,'_bas_mask.nii']));
 %Save the raw data
 IVIM_fit.img = img;
 img(:,:,:,discard_n) = [];
@@ -86,14 +91,16 @@ ROI = createMask(ROI,256,256);
 IVIM_fit.background = mean(nonzeros(img(:,:,round(slice_slider.Value),round(b_slider.Value)).*ROI))
 
 %Fit to IVIM model
-[IVIM_fit.S0,IVIM_fit.f_IVIM,IVIM_fit.D,IVIM_fit.Dstar] = fit_IVIM(b,img,pla_mask(:,:,:,1)+wall_mask(:,:,:,1));
+[IVIM_fit.S0,IVIM_fit.f_IVIM,IVIM_fit.D,IVIM_fit.Dstar] = fit_IVIM(b,img,pla_mask(:,:,:,1)+wall_mask(:,:,:,1)+chor_mask(:,:,:,1)+bas_mask(:,:,:,1));
 
 %Save masks... might be easier than re-reading in the .nii
 IVIM_fit.pla_mask = pla_mask;
 IVIM_fit.wall_mask = wall_mask;
+IVIM_fit.bas_mask = bas_mask;
+IVIM_fit.chor_mask = chor_mask;
 
 
-save(['R:\DRS-SWIRL\Activity 2 MRI\SWIRL_B_',SWIRL_ID,'_',visit_ID,'\DWI\SWIRL_B',SWIRL_ID,'_',visit_ID,'_IVIM_fit'],'IVIM_fit')
+save(['R:\DRS-SWIRL\Activity 2 MRI\misc\George\DWI\erosion_masks_fitting\masks\SWIRL_B_',SWIRL_ID,'_',visit_ID,'\SWIRL_B',SWIRL_ID,'_',visit_ID,'_',scan_n,'_IVIM_fit'],'IVIM_fit')
 
 
 close all

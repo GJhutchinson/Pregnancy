@@ -1,19 +1,24 @@
-clear all
-clc
+% clear all
+% clc
+% 
+% %We need to load in: The DWI scan, the mask + the discarded volumes...
+% %Is it worth running these one at a time? or should the code try to do
+% %both?.... probably one at a time. I'm not going to have GUI inputs or the
+% %like; just edit below parameters to select the scans you want
+% 
+% 
+% SWIRL_ID = '007';
+% visit_ID = '2';
+% scan_n = '12';
 
-%We need to load in: The DWI scan, the mask + the discarded volumes...
-%Is it worth running these one at a time? or should the code try to do
-%both?.... probably one at a time. I'm not going to have GUI inputs or the
-%like; just edit below parameters to select the scans you want
-
-SWIRL_ID = '001';
-visit_ID = '1';
-scan_n = '11';
-
+%%
+clearvars -except SWIRL_ID scan_n visit_ID
+addpath('C:\placental\Functions')
 %Load in fit data
-load(['R:\DRS-SWIRL\Activity 2 MRI\SWIRL_B_',SWIRL_ID,'_',visit_ID,'\DWI\SWIRL_B',SWIRL_ID,'_',visit_ID,'_IVIM_fit']);
+load(['R:\DRS-SWIRL\Activity 2 MRI\misc\George\DWI\erosion_masks_fitting\masks\SWIRL_B_',SWIRL_ID,'_',visit_ID,'\SWIRL_B',SWIRL_ID,'_',visit_ID,'_',scan_n,'_IVIM_fit']);
 %Combine masks to get all data
-tot_mask = IVIM_fit.pla_mask+IVIM_fit.wall_mask;
+
+tot_mask = IVIM_fit.pla_mask+IVIM_fit.wall_mask+IVIM_fit.bas_mask+IVIM_fit.chor_mask;
 
 noise_mask = [IVIM_fit.img(:,:,:,1)>[5.*IVIM_fit.background]].*tot_mask;
 
@@ -56,6 +61,14 @@ param_slider = uicontrol('Style','Slider','min',1,'max',4,'Value',1,'Position', 
 
 noise_floor_button = uicontrol('Style','togglebutton','min',0,'max',1,'Value',0,'Position',[700 20 120 30],'String','Noise floor');
 
+wall_mask_button = uicontrol('Style','togglebutton','min',0,'max',1,'Value',0,'Position',[840 20 120 30],'String','Wall');
+bas_mask_button = uicontrol('Style','togglebutton','min',0,'max',1,'Value',0,'Position',[980 20 120 30],'String','Basal plate');
+pla_mask_button = uicontrol('Style','togglebutton','min',0,'max',1,'Value',0,'Position',[1120 20 120 30],'String','Placenta');
+chor_mask_button = uicontrol('Style','togglebutton','min',0,'max',1,'Value',0,'Position',[1260 20 120 30],'String','Chorionic plate');
+
+
+
+
 while true
     %Get slider values
     x_val = round(x_slider.Value);
@@ -88,11 +101,23 @@ while true
 
     %Display background image, parameter map, and show the highlighted
     %voxel
+    img_map = [IVIM_fit.wall_mask(:,:,slice_n).*~wall_mask_button.Value+IVIM_fit.bas_mask(:,:,slice_n).*~bas_mask_button.Value+IVIM_fit.pla_mask(:,:,slice_n).*~pla_mask_button.Value+IVIM_fit.chor_mask(:,:,slice_n).*~chor_mask_button.Value].*map;
+
+
     subplot(2,2,[1 3])
     if noise_floor_button.Value == 0
-        colour_map_greyscale_background2(IVIM_fit.img(:,:,slice_n),map);
+        colour_map_greyscale_background2(IVIM_fit.img(:,:,slice_n),img_map);
     else
-        colour_map_greyscale_background2(IVIM_fit.img(:,:,slice_n),map.*noise_mask(:,:,slice_n));
+        colour_map_greyscale_background2(IVIM_fit.img(:,:,slice_n),img_map.*noise_mask(:,:,slice_n));
+    end
+
+    switch param_n
+        case 2
+            caxis([0 1])
+        case 3
+            caxis([0 5*1e-3])
+        case 4
+            caxis([0 300*1e-3])
     end
    
     yline(y_val,'g');
@@ -111,7 +136,6 @@ while true
     hold off
 
     drawnow
-    pause(0.1)
 
 end
 

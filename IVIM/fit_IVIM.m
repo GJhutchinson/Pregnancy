@@ -38,7 +38,7 @@ ub_mono_fast = [100000 1];
 x0_mono_fast = [30000 0.2];
 
 %Slow fit
-%[S0 D*]
+%[S0 D]
 lb_mono_slow = [0 0];
 ub_mono_slow = [100000 0.025];
 x0_mono_slow = [30000 0.002];
