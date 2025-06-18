@@ -132,7 +132,7 @@ save_and_continue = uicontrol(figure(1),'Style','togglebutton','min',0,'max',1,'
 generate_masks = uicontrol(figure(1),'Style','togglebutton','min',0,'max',1,'Value',0,'units','normalized','Position',[0.90 0.0768 0.0812 0.09],'String','Generate Masks');
 
 contrast_button = uicontrol(figure(1),'Style','togglebutton','min',0,'max',1,'Value',0,'units','normalized','Position',[0.635 0.0185 0.034 0.0556],'String','Contrast');
-contrast_figure = figure;
+contrast_figure = figure('units','normalized','position',[0.6 0.6 0.9 0.9]);
 close(contrast_figure)
 
 toggle_placenta_side = uicontrol(f,'Style','togglebutton','min',0,'max',1,'Value',0,'units','normalized','Position',[0.4029 0.0185 0.07 0.03],'String','Toggle pla');
@@ -479,7 +479,7 @@ while kill == [0 0]
         hist_data = hist_data(hist_data~=0);
         %If the contrast figure doesn't exist; make it
         if ishandle(contrast_figure) == 0
-            contrast_figure = figure(2);
+            contrast_figure = figure('units','normalized','position',[0.6 0.6 0.9 0.9]);
             contrast_ax = axes('Parent',contrast_figure);
 
             %This was added because its easy to just close the contrast
@@ -573,7 +573,11 @@ end
 
 close all
 
-save([save_dir,'/',file(1:end-4),'_mask_file'],'pos_store','pla_roi','uter_ID')
+if strcmp(file(1:end-4),'.nii')
+    save([save_dir,'/',file(1:end-4),'_mask_file'],'pos_store','pla_roi','uter_ID')
+else %Else compressed nifti
+    save([save_dir,'/',file(1:end-7),'_mask_file'],'pos_store','pla_roi','uter_ID')
+end
 
 
 
@@ -599,7 +603,7 @@ if isequal(kill,[0 1]) || isequal(kill,[1 1])
                 end
             end
         end
-        niftiwrite(mask,[save_dir,'/',file(1:end-4),'_edited'])
+        niftiwrite(mask,[save_dir,'\',file(1:end-7),'mask_edited'])
     else
         mask = zeros(size(scan_1));
         for slice_n = 1:size(pos_store.slice,2)
