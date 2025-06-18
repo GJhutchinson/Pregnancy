@@ -196,7 +196,7 @@ elseif cont_mask == 1 %If continuing from a mask file produced by this script
         pos_store = struct;%The positions of the polygons for the mask
         uter_ID = struct;
         pla_roi = struct;
-        
+
 
     end
 end
@@ -599,8 +599,8 @@ if isequal(kill,[0 1]) || isequal(kill,[1 1])
                 end
             end
         end
-    else   
-
+        niftiwrite(mask,[save_dir,'/',file(1:end-4),'_edited'])
+    else
         mask = zeros(size(scan_1));
         for slice_n = 1:size(pos_store.slice,2)
             for vol_n = 1:size(pos_store.slice(slice_n).volume,2)
@@ -620,11 +620,9 @@ if isequal(kill,[0 1]) || isequal(kill,[1 1])
                 mask(:,:,slice_n,vol_n) = mask_tmp;
             end
         end
-
-
+        niftiwrite(mask,[save_dir,'/',file(1:end-4),'_mask'])
     end
 end
-
 
 
 
