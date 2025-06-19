@@ -37,14 +37,18 @@
 %Save and close now saves and closes (doesn't generate NIfTI masks)
 %Added generate mask button which now closes script + generates NIfTI masks
 
-%10/06/25
+%18/06/25
 %Added the ability to load ML nifti masks
+%Updated save functionality to always generate nifti masks; slower but a
+% failsafe to ensure work is not lost
+%Changed how mask generation works; produces a single nifti where 1 =
+% reamining uterus and 2 = placenta
 
 %%%%Version history%%%%
 % 25/05/23 Initial version
 % 30/06/23 Updated to v1.1
 % 01/08/23 Updated to v1.2
-% 10/06/25 updated to v1.3
+% 18/06/25 updated to v1.3
 %%%%Dependencies%%%%
 %partition_placentav03.m
 %snap_pla_to_uterv02.m
@@ -127,9 +131,7 @@ end
 
 
 kill_button = uicontrol(figure(1),'Style','togglebutton','min',0,'max',1,'Value',0,'units','normalized','Position',[0.9 0.0185 0.0812 0.0556],'String','Close and save');
-save_and_continue = uicontrol(figure(1),'Style','togglebutton','min',0,'max',1,'Value',0,'units','normalized','Position',[0.82 0.0185 0.0812 0.0556],'String','Save');
-
-generate_masks = uicontrol(figure(1),'Style','togglebutton','min',0,'max',1,'Value',0,'units','normalized','Position',[0.90 0.0768 0.0812 0.09],'String','Generate Masks');
+save_and_continue = uicontrol(figure(1),'Style','togglebutton','min',0,'max',1,'Value',0,'units','normalized','Position',[0.82 0.0185 0.0812 0.0556],'String','Save and continue');
 
 contrast_button = uicontrol(figure(1),'Style','togglebutton','min',0,'max',1,'Value',0,'units','normalized','Position',[0.635 0.0185 0.034 0.0556],'String','Contrast');
 contrast_figure = figure('units','normalized','position',[0.6 0.6 0.9 0.9]);
@@ -214,7 +216,7 @@ obj_bool_prev = 0;
 total_obj_prev = 999;
 show_masks = 1;
 show_n_masks = 1;
-while kill == [0 0]
+while kill_button.Value == 0
     % Initially I tried to make this function free; so only one program is
     % needed to run making things easier. I ended up having to add
     % functions, so it would be better to rewrite this at some point, where
@@ -280,10 +282,6 @@ while kill == [0 0]
         prev_slice = slice_n;
         prev_vol = vol_n;
     end
-
-
-
-    kill = [get(kill_button,'value')  get(generate_masks,'value')];
 
     %Has draw or edit ROI been pressed
     draw_button_val = get(draw_button,'value');
@@ -393,7 +391,7 @@ while kill == [0 0]
             %Reset edit button
 
         catch
-            disp('Error in edit function')
+            warning('Error in edit function')
             delete(edit_button)
         end
         edit_button = uicontrol(f,'Style','togglebutton','min',0,'max',1,'Value',0,'units','normalized','Position',[0.2344 0.0463 0.07 0.03],'String','Edit ROI');
@@ -445,7 +443,6 @@ while kill == [0 0]
 
 
     if send_across_button.Value == 1 %Send to next slice or volume
-        disp('button press')
         try
             if send_across_popup_list.Value == 1 %Next slice
                 pos_store(1).slice(slice_n+1).volume(vol_n).object = pos_store(1).slice(slice_n).volume(vol_n).object;
@@ -467,7 +464,7 @@ while kill == [0 0]
 
             end
         catch
-            disp('Unable to send to next volume or slice')
+            warning('Unable to send to next volume or slice')
         end
         send_across_button.Value = 0;
     end
@@ -526,15 +523,29 @@ while kill == [0 0]
 
             uter_ID_prev = uter_ID.slice(slice_n).volume(vol_n);
             [pla_roi] = partition_placentav03(pos_store,slice_n,vol_n,selected_mask,uter_ID.slice(slice_n).volume(vol_n),pla_roi);
-
-
         catch
-            disp('Error switching placenta ROI; is there a masked placenta on this slice?')
+            warning('Error switching placenta ROI; is there a masked placenta on this slice?')
         end
         toggle_placenta_side.Value = 0;
         %Force the image to update
         prev_slice = 0;
     end
+
+    if save_and_continue.Value == 1
+        try
+            if exist('nifti_mask') %%If continuing/editing a nifti mask
+                save_masks(pos_store,save_dir,pla_roi,file,scan_1,nifti_mask)
+            else
+                save_masks(pos_store,save_dir,pla_roi,file,scan_1)
+            end
+        catch
+            warning('Error saving masks')
+        end
+        save_and_continue.Value = 0;
+    end
+
+
+
 
     if undo_last_ROI.Value == 1
         disp('pressed')
@@ -547,7 +558,6 @@ while kill == [0 0]
                 %If this was a placental ROI, delete that too
                 if size(pla_roi.slice(slice_n).volume(vol_n).pos,2) ~= 0
                     pla_roi.slice(slice_n).volume(vol_n).pos(size(pla_roi.slice(slice_n).volume(vol_n).pos,2)) = [];
-                    pla_roi.slice(slice_n).volume(vol_n).length(size(pla_roi.slice(slice_n).volume(vol_n).length,2)) = [];
                 else %Else it's a uterine object; clear everything out; means when you press draw
                     %it will start again; draw uterus + pla in one go
                     pos_store(selected_mask).slice(slice_n).volume(vol_n).object = [];
@@ -557,15 +567,8 @@ while kill == [0 0]
         catch
             disp('Unable to undo ROI')
         end
-
+        prev_slice = 0;%Force GUI update
         undo_last_ROI.Value = 0;
-    end
-
-    if get(save_and_continue,'value') == 1
-
-        save([save_dir,'/',file(1:end-4),'_mask_file'],'pos_store','pla_roi','uter_ID')
-        save_and_continue.Value = 0;
-
     end
 
     drawnow %Causes figures to update
@@ -580,59 +583,12 @@ else %Else compressed nifti
 end
 
 
-
-if isequal(kill,[0 1]) || isequal(kill,[1 1])
-    if exist('nifti_mask') %%If continuing/editing a nifti mask
-        mask = nifti_mask;
-        % delete('scan_1')
-        for slice_n = 1:size(pos_store.slice,2)
-            for vol_n = 1:size(pos_store.slice(slice_n).volume,2)
-                mask_tmp = zeros(256,256);
-                if length(pos_store.slice(slice_n).volume(vol_n).object)>0
-                    for mask_n = 1:size(pos_store.slice(slice_n).volume(vol_n).object(1).pos,2)
-                        disp(['Slice',num2str(slice_n),' vol',num2str(vol_n)])
-                        if mask_n == 1
-                            mask_pos = pos_store(1).slice(slice_n).volume(vol_n).object.pos{mask_n};
-                            mask_tmp = poly2mask(pos_store(mask_n).slice(slice_n).volume(vol_n).object.pos{pla_roi_n}(:,1),pos_store(mask_n).slice(slice_n).volume(vol_n).object.pos{pla_roi_n}(:,2),256,256);
-                        else
-                            mask_pos = pla_roi.slice(slice_n).volume(vol_n).pos{1};
-                            mask_tmp = mask_tmp + poly2mask(mask_pos(:,1),mask_pos(:,2),256,256);
-                        end
-                    end
-                    mask(:,:,slice_n,vol_n) = mask_tmp;
-                end
-            end
-        end
-        niftiwrite(mask,[save_dir,'\',file(1:end-7),'mask_edited'])
-    else
-        mask = zeros(size(scan_1));
-        for slice_n = 1:size(pos_store.slice,2)
-            for vol_n = 1:size(pos_store.slice(slice_n).volume,2)
-                mask_tmp = zeros(256,256);
-                if length(pos_store.slice(slice_n).volume(vol_n).object)>0
-                    for mask_n = 1:size(pos_store.slice(slice_n).volume(vol_n).object(1).pos,2)
-                        disp(['Slice',num2str(slice_n),' vol',num2str(vol_n)])
-                        if mask_n == 1
-                            mask_pos = pos_store(1).slice(slice_n).volume(vol_n).object.pos{mask_n};
-                            mask_tmp = poly2mask(pos_store(mask_n).slice(slice_n).volume(vol_n).object.pos{pla_roi_n}(:,1),pos_store(mask_n).slice(slice_n).volume(vol_n).object.pos{pla_roi_n}(:,2),256,256);
-                        else
-                            mask_pos = pla_roi.slice(slice_n).volume(vol_n).pos{1};
-                            mask_tmp = mask_tmp + poly2mask(mask_pos(:,1),mask_pos(:,2),256,256);
-                        end
-                    end
-                end
-                mask(:,:,slice_n,vol_n) = mask_tmp;
-            end
-        end
-        niftiwrite(mask,[save_dir,'/',file(1:end-4),'_mask'])
-    end
+%Save masks enforced; will always generate niftis now
+if exist('nifti_mask') %%If continuing/editing a nifti mask
+    save_masks(pos_store,save_dir,pla_roi,file,scan_1,nifti_mask)
+else
+    save_masks(pos_store,save_dir,pla_roi,scan_1,file)
 end
-
-
-
-
-
-
 
 
 
