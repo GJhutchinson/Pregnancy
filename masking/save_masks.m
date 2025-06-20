@@ -43,7 +43,7 @@ else
                         mask_pos = pos_store(1).slice(slice_n).volume(vol_n).object.pos{mask_n};
                         mask_tmp = poly2mask(pos_store(1).slice(slice_n).volume(vol_n).object.pos{mask_n}(:,1),pos_store(1).slice(slice_n).volume(vol_n).object.pos{mask_n}(:,2),256,256);
                     else
-                        mask_pos = pla_roi.slice(slice_n).volume(vol_n).pos{1};
+                        mask_pos = pla_roi.slice(slice_n).volume(vol_n).pos{mask_n-1};
                         mask_tmp = mask_tmp + poly2mask(mask_pos(:,1),mask_pos(:,2),256,256);
                     end
                 end
